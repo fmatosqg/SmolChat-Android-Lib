@@ -30,3 +30,5 @@ rootProject.name = "SmolChat Android"
 include(":app")
 include(":smollm")
 include(":hf-model-hub-api")
+include(":demo")
+include(":smolchat-core")

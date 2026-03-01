@@ -1,0 +1,29 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Smartphone: Hugging Face Yellow Background + Outline (Black) -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:fillColor="#FFD21E"
+        android:pathData="M35,20h38c2,0 4,2 4,4v60c0,2 -2,4 -4,4h-38c-2,0 -4,-2 -4,-4v-60c0,-2 2,-4 4,-4z"/>
+    
+    <!-- Microchip (Black Square) -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M44,44h20v20h-20z"/>
+    
+    <!-- Circuit Pins (White Lines) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1"
+        android:pathData="M42,47h4 M42,54h4 M42,61h4 M62,47h4 M62,54h4 M62,61h4 M47,42v4 M54,42v4 M61,42v4 M47,62v4 M54,62v4 M61,62v4"/>
+    
+    <!-- Central Spark (White Circle) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52,54a2,2 0 1,0 4,0a2,2 0 1,0 -4,0"/>
+</vector>

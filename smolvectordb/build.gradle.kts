@@ -6,7 +6,7 @@ plugins {
 android {
     namespace = "io.shubham0204.smolvectordb"
     compileSdk { version = release(36) }
-    ndkVersion = "27.2.12479018"
+    ndkVersion = "27.0.12077973"
 
     defaultConfig {
         minSdk = 24

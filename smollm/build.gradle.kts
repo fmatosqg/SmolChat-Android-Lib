@@ -22,7 +22,7 @@ plugins {
 android {
     namespace = "io.shubham0204.smollm"
     compileSdk = 35
-    ndkVersion = "27.2.12479018"
+    ndkVersion = "27.0.12077973"
 
     defaultConfig {
         minSdk = 26
