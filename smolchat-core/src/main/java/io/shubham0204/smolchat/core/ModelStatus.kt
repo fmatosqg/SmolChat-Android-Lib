@@ -1,8 +1,8 @@
 package io.shubham0204.smolchat.core
 
-enum class ModelStatus {
-    LOADED_IN_MEMORY,
-    ON_DISK,
-    DOWNLOADING,
-    UNAVAILABLE
+sealed class ModelStatus {
+    object UNAVAILABLE : ModelStatus()
+    data class DOWNLOADING(val progress: Float) : ModelStatus()
+    object ON_DISK : ModelStatus()
+    object LOADED_IN_MEMORY : ModelStatus()
 }

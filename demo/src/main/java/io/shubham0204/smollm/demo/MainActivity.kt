@@ -5,8 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
@@ -46,22 +48,46 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun MainContent(
+fun MainContent(
     uiState: MainViewModel.UiState,
     onButtonClick: () -> Unit
 ) {
-    Column (
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(onClick = onButtonClick) {
-            Text(text = "Download Model")
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Button(onClick = onButtonClick) {
+                Text(text = "Download Model")
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            val statusLabel = when (val status = uiState.modelStatus) {
+                is ModelStatus.UNAVAILABLE -> "Unavailable"
+                is ModelStatus.DOWNLOADING -> "Downloading (${(status.progress * 100).toInt()}%)"
+                is ModelStatus.ON_DISK -> "On Disk"
+                is ModelStatus.LOADED_IN_MEMORY -> "Loaded"
+            }
+            Text(text = statusLabel)
         }
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(text = "${uiState.statusText} (${uiState.modelStatus})")
+        
+        if (uiState.aiResponse.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "AI Response:",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = uiState.aiResponse,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
     }
 }
 
@@ -72,7 +98,8 @@ fun MainContentPreview() {
         MainContent(
             uiState = MainViewModel.UiState(
                 statusText = "Preview",
-                modelStatus = ModelStatus.ON_DISK
+                modelStatus = ModelStatus.DOWNLOADING(0.45f),
+                aiResponse = "Hello! I am a preview response."
             ),
             onButtonClick = {}
         )

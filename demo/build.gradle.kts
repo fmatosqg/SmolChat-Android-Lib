@@ -50,6 +50,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(project(":smolchat-core"))
+    implementation("io.ktor:ktor-client-okhttp:3.0.2")
+    implementation("io.ktor:ktor-client-cio:3.0.2")
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
 
