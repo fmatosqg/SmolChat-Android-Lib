@@ -14,12 +14,8 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class ModelsRepository(private val client: SmolLMClient) {
 
-    fun triggerLoad(modelId: String) {
+    suspend fun triggerLoad(modelId: String) {
         client.loadModel(modelId)
-    }
-
-    fun loadFromFile(file: File) {
-        client.loadModelFromFile()
     }
 
     suspend fun generateResponse(prompt: String): String {

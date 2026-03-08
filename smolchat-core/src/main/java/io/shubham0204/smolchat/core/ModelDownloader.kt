@@ -12,11 +12,18 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.core.remaining
 import io.ktor.utils.io.exhausted
 import io.ktor.utils.io.readRemaining
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.io.asSink
 import java.io.File
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 class ModelDownloader(private val context: Context, private val httpClient: HttpClient) {
 
+    private val scope = CoroutineScope(Dispatchers.Default)
+    private val lock = ReentrantLock()
 
     suspend fun ensureModelDownloaded(
         url: String,
@@ -28,13 +35,24 @@ class ModelDownloader(private val context: Context, private val httpClient: Http
         val outputFile = File(modelDir, modelName)
 
         if (outputFile.exists() && outputFile.length() > 0) {
-            Log.i("ModelDownloader", "Model $modelName already exists at ${outputFile.absolutePath}. Skipping download.")
+            Log.i(
+                "ModelDownloader",
+                "Model $modelName already exists at ${outputFile.absolutePath}. Skipping download."
+            )
             onProgress(1f)
             return outputFile
         }
 
-        Log.i("ModelDownloader", "Model $modelName not found or empty. Starting download from $url.")
-        download(url, modelName, onProgress)
+        Log.i(
+            "ModelDownloader",
+            "Model $modelName not found or empty. Starting download from $url."
+        )
+
+        lock.withLock {
+            scope.launch {
+                download(url, modelName, onProgress)
+            }
+        }
         return outputFile
     }
 
@@ -54,7 +72,6 @@ class ModelDownloader(private val context: Context, private val httpClient: Http
 
             val channel: ByteReadChannel = httpResponse.body()
             var count = 0L
-            var lastProgressPercent = 0
             stream.use {
                 while (!channel.exhausted()) {
                     val chunk = channel.readRemaining(bufferSize)
@@ -63,14 +80,8 @@ class ModelDownloader(private val context: Context, private val httpClient: Http
                     chunk.transferTo(stream)
 
                     val progress = count.toFloat() / (httpResponse.contentLength()?.toFloat() ?: 0f)
-                    val currentPercent = (progress * 100).toInt()
 
-                    // Only log and update UI if the percentage has changed
-                    if (currentPercent != lastProgressPercent) {
-                        lastProgressPercent = currentPercent
-
-                        onProgress(progress)
-                    }
+                    onProgress(progress)
                 }
             }
         }

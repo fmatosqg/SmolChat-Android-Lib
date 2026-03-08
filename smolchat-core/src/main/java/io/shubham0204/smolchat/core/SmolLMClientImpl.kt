@@ -11,15 +11,14 @@ import java.io.File
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-class FakeSmolLMClient(
-    private val context: android.content.Context,
+class SmolLMClientImpl(
+//    private val context: android.content.Context,
     private val modelDownloader: ModelDownloader
 ) : SmolLMClient {
-    private val scope = CoroutineScope(Dispatchers.Default)
     private val state = MutableStateFlow<ModelStatus>(ModelStatus.UNAVAILABLE)
-    private val lock = ReentrantLock()
+
     private val smolLM = SmolLM()
-    private var downloadedFile: File? = null
+//    private var downloadedFile: File? = null
 
     private val POC_MODEL_URL =
         "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/resolve/main/smollm2-360m-instruct-q8_0.gguf"
@@ -27,30 +26,24 @@ class FakeSmolLMClient(
 
     override fun getModelStateFlow(): Flow<ModelStatus> = state
 
-    override fun loadModel(modelId: String) {
+    override suspend fun loadModel(modelId: String) {
         if (state.value != ModelStatus.UNAVAILABLE) return
 
-        lock.withLock {
-            scope.launch {
-                downloadedFile = modelDownloader.ensureModelDownloaded(
-                    url = POC_MODEL_URL,
-                    modelName = POC_MODEL_NAME,
-                    onProgress = { progress ->
-                        state.value = ModelStatus.DOWNLOADING(progress)
-                    }
-                )
-                state.value = ModelStatus.ON_DISK
-
-                loadModelFromFile()
-
+        val modelFile = modelDownloader.ensureModelDownloaded(
+            url = POC_MODEL_URL,
+            modelName = POC_MODEL_NAME,
+            onProgress = { progress ->
+                state.value = ModelStatus.DOWNLOADING(progress)
             }
-        }
+        )
+        state.value = ModelStatus.ON_DISK
+
+        loadModelFromFile(modelFile)
+
     }
 
-    override fun loadModelFromFile() {
-        scope.launch {
-            val modelDir = File(context.cacheDir, "model")
-            val file = File(modelDir, POC_MODEL_NAME)
+    private suspend fun loadModelFromFile(file: File) {
+        withContext(Dispatchers.IO) {
 
             try {
                 smolLM.load(file.absolutePath)

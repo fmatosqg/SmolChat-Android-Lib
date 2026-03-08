@@ -39,5 +39,5 @@ dependencies {
     implementation("io.ktor:ktor-client-cio:${ktorVersion}")
     implementation("io.ktor:ktor-client-logging:${ktorVersion}")
     implementation(project(":smollm"))
-    implementation(project(":hf-model-hub-api"))
+//    implementation(project(":hf-model-hub-api"))
 }

@@ -24,13 +24,7 @@ class MainViewModel(
         viewModelScope.launch {
             repository.getModelStateFlow("some-model-id").collect { newStatus ->
                 uiState.update { it.copy(modelStatus = newStatus) }
-                
-                // Automatically transition from ON_DISK to loading in memory
-                if (newStatus is ModelStatus.ON_DISK) {
-                    // In a real app, we'd get the actual file path
-                    repository.loadFromFile(File("dummy-path"))
-                }
-                
+
                 // If loaded, trigger the prompt "hello"
                 if (newStatus is ModelStatus.LOADED_IN_MEMORY && uiState.value.aiResponse.isEmpty()) {
                     val response = repository.generateResponse("hello")
@@ -41,7 +35,10 @@ class MainViewModel(
     }
 
     fun onButtonClicked() {
-        repository.triggerLoad("some-model-id")
+
+        viewModelScope.launch {
+            repository.triggerLoad("some-model-id")
+        }
         uiState.update { it.copy(statusText = "clicked") }
     }
 }
