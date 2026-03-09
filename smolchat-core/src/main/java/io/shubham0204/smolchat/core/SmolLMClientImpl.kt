@@ -1,15 +1,12 @@
 package io.shubham0204.smolchat.core
 
 import io.shubham0204.smollm.SmolLM
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jetbrains.annotations.TestOnly
 import java.io.File
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 
 class SmolLMClientImpl(
     private val modelDownloader: ModelDownloader
@@ -39,12 +36,16 @@ class SmolLMClientImpl(
                 }
             // TODO handle failure status
         }
-
-
     }
 
-    private suspend fun loadModelFromFile(file: File) {
+    @TestOnly
+    internal suspend fun loadModelFromFile(file: File) {
         smolLM.load(file.absolutePath)
+    }
+
+    @TestOnly
+    internal suspend fun loadModelFromFd(fd: Int) {
+        smolLM.loadFromFd(fd)
     }
 
     override suspend fun generateResponse(prompt: String): String {

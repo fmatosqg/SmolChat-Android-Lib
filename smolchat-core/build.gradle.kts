@@ -1,4 +1,5 @@
 import java.net.URL
+import java.net.URI
 import java.io.File
 
 plugins {
@@ -33,18 +34,33 @@ android {
         jvmTarget = "17"
     }
 
-//    sourceSets {
-//        getByName("androidTest") {
-//            assets.srcDirs("src/androidTest/assets")
-//        }
-//    }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/LICENSE-notice.md"
+        }
+    }
+
+    androidResources {
+        // https://developer.android.com/reference/tools/gradle-api/8.13/com/android/build/api/dsl/AndroidResources
+//        noCompress("")
+//        noCompress += listOf("gguf") // this works for assets/ but not for res/raw
+//        noCompress += listOf("gguf", "GGUF", ".gguf", "raw/test_model.gguf")
+    }
+
+    aaptOptions {
+        // https://docs.unity3d.com/2023.2/Documentation/ScriptReference/Unity.Android.Gradle.AaptOptions.NoCompress.html
+
+//        noCompress("gguf", "GGUF", "test_model.gguf")
+    }
 }
 
 tasks.register("downloadTestModel") {
     val modelUrl =
         "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/resolve/main/smollm2-360m-instruct-q8_0.gguf"
 //    val modelUrl = "https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct-GGUF/resolve/main/smollm2-135m-instruct-q8_0.gguf"
-    val outputDir = file("src/androidTest/assets")
+    val outputDir = file("src/androidTest/res/raw/")
     val outputFile = File(outputDir, "test_model.gguf")
 
     outputs.file(outputFile)
@@ -53,7 +69,7 @@ tasks.register("downloadTestModel") {
         if (!outputDir.exists()) outputDir.mkdirs()
         if (!outputFile.exists()) {
             println("Downloading test model from $modelUrl...")
-            URL(modelUrl).openStream().use { input ->
+            URI(modelUrl).toURL().openStream().use { input ->
                 outputFile.outputStream().use { output ->
                     input.copyTo(output)
                 }
@@ -69,7 +85,10 @@ tasks.register("downloadTestModel") {
 tasks.matching {
     it.name.contains("connectedDebugAndroidTest") ||
     it.name.contains("packageDebugAndroidTest") ||
-    (it.name.startsWith("merge") && it.name.endsWith("AndroidTestAssets"))
+    (it.name.startsWith("merge") && it.name.endsWith("AndroidTestAssets")) ||
+    (it.name.startsWith("process") && it.name.endsWith("Resources")) ||
+    (it.name.startsWith("generate") && it.name.endsWith("TestResources"))
+
 }.all {
     dependsOn("downloadTestModel")
 }
@@ -88,4 +107,6 @@ dependencies {
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.mockk.android)
 }

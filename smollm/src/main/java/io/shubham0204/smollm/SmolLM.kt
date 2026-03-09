@@ -197,6 +197,33 @@ class SmolLM {
                 )
         }
 
+      fun loadFromFd(fd: Int, params: InferenceParams = InferenceParams()) {
+//        withContext(Dispatchers.IO) {
+            val ggufReader = GGUFReader()
+//            val virtualPath = "/proc/self/fd/$fd"
+
+            ggufReader.loadFromFd(fd)
+            val modelContextSize = ggufReader.getContextSize() ?: DefaultInferenceParams.contextSize
+            val modelChatTemplate =
+                ggufReader.getChatTemplate() ?: DefaultInferenceParams.chatTemplate
+
+
+
+            nativePtr =
+                loadModelFromFd(
+                    fd,
+                    params.minP,
+                    params.temperature,
+                    params.storeChats,
+                    params.contextSize ?: modelContextSize,
+                    params.chatTemplate ?: modelChatTemplate,
+                    params.numThreads,
+                    params.useMmap,
+                    params.useMlock,
+                )
+            assert(nativePtr != 0L) { "Failed to load model from file descriptor $fd" }
+        }
+
     /**
      * Adds a user message to the chat history. This message will be considered as part of the
      * conversation when generating the next response.
@@ -317,6 +344,18 @@ class SmolLM {
 
     private external fun loadModel(
         modelPath: String,
+        minP: Float,
+        temperature: Float,
+        storeChats: Boolean,
+        contextSize: Long,
+        chatTemplate: String,
+        nThreads: Int,
+        useMmap: Boolean,
+        useMlock: Boolean,
+    ): Long
+
+    private external fun loadModelFromFd(
+        fd: Int,
         minP: Float,
         temperature: Float,
         storeChats: Boolean,

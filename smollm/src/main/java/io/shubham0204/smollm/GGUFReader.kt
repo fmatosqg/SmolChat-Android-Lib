@@ -28,8 +28,21 @@ class GGUFReader {
 
     private var nativeHandle: Long = 0L
 
-    suspend fun load(modelPath: String) =
-        withContext(Dispatchers.IO) { nativeHandle = getGGUFContextNativeHandle(modelPath) }
+    suspend fun load(modelPath: String) {
+
+        withContext(Dispatchers.IO) {
+            nativeHandle = getGGUFContextNativeHandle(modelPath)
+            assert(nativeHandle != 0L) { "Failed to load GGUF file: $modelPath" }
+
+        }
+    }
+
+      fun loadFromFd(fd: Int) {
+//        withContext(Dispatchers.IO) {
+            nativeHandle = getGGUFContextNativeHandleFromFd(fd)
+
+            assert(nativeHandle != 0L) { "Failed to load GGUF file from fd: $fd" }
+        }
 
     fun getContextSize(): Long? {
         assert(nativeHandle != 0L) { "Use GGUFReader.load() to initialize the reader" }
@@ -49,6 +62,8 @@ class GGUFReader {
 
     /** Returns the native handle (pointer to gguf_context created on the native side) */
     private external fun getGGUFContextNativeHandle(modelPath: String): Long
+
+    private external fun getGGUFContextNativeHandleFromFd(fd:Int): Long
 
     /** Read the context size (in no. of tokens) from the GGUF file, given the native handle */
     private external fun getContextSize(nativeHandle: Long): Long

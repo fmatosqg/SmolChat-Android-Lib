@@ -1,5 +1,8 @@
 #include "LLMInference.h"
 #include <jni.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <android/log.h>
 
 extern "C" JNIEXPORT jlong JNICALL
 Java_io_shubham0204_smollm_SmolLM_loadModel(JNIEnv* env, jobject thiz, jstring modelPath, jfloat minP,
@@ -24,6 +27,32 @@ Java_io_shubham0204_smollm_SmolLM_loadModel(JNIEnv* env, jobject thiz, jstring m
     env->ReleaseStringUTFChars(modelPath, modelPathCstr);
     env->ReleaseStringUTFChars(chatTemplate, chatTemplateCstr);
     return reinterpret_cast<jlong>(llmInference);
+}
+
+
+extern "C" JNIEXPORT jlong JNICALL
+Java_io_shubham0204_smollm_SmolLM_loadModelFromFd(JNIEnv* env, jobject thiz, jint fd, jfloat minP,
+                                                  jfloat temperature, jboolean storeChats, jlong contextSize,
+                                                  jstring chatTemplate, jint nThreads, jboolean useMmap, jboolean useMlock) {
+    char path[256];
+    sprintf(path, "/proc/self/fd/%d", fd);
+
+    struct stat st;
+    if (fstat(fd, &st) != 0) {
+        __android_log_print(ANDROID_LOG_ERROR, "SmolLM-JNI", "fstat failed for fd %d: %s", fd, strerror(errno));
+    } else {
+        __android_log_print(ANDROID_LOG_INFO, "SmolLM-JNI", "fd %d info: size=%lld, mode=%o", fd, (long long)st.st_size, st.st_mode);
+    }
+
+    if (access(path, R_OK) != 0) {
+        __android_log_print(ANDROID_LOG_ERROR, "SmolLM-JNI", "Read access failed for %s: %s", path, strerror(errno));
+    } else {
+        __android_log_print(ANDROID_LOG_INFO, "SmolLM-JNI", "Read access OK for %s", path);
+    }
+
+    jstring modelPath = env->NewStringUTF(path);
+    return Java_io_shubham0204_smollm_SmolLM_loadModel(env, thiz, modelPath, minP, temperature, storeChats,
+                                                       contextSize, chatTemplate, nThreads, useMmap, useMlock);
 }
 
 extern "C" JNIEXPORT void JNICALL

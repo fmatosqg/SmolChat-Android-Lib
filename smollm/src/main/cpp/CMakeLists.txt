@@ -146,8 +146,13 @@ target_compile_options(
         -fvisibility=hidden -fvisibility-inlines-hidden -ffunction-sections -fdata-sections
 )
 target_link_libraries(
+        ggml-base
+        PUBLIC log
+)
+
+target_link_libraries(
         ${TARGET_NAME_GGUF_READER}
-        ggml
+        ggml-base log
 )
 target_link_options(
         ${TARGET_NAME_GGUF_READER}
