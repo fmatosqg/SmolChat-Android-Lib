@@ -1,3 +1,6 @@
+import java.net.URL
+import java.io.File
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -16,7 +19,10 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
     compileOptions {
@@ -26,7 +32,48 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+//    sourceSets {
+//        getByName("androidTest") {
+//            assets.srcDirs("src/androidTest/assets")
+//        }
+//    }
 }
+
+tasks.register("downloadTestModel") {
+    val modelUrl =
+        "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/resolve/main/smollm2-360m-instruct-q8_0.gguf"
+//    val modelUrl = "https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct-GGUF/resolve/main/smollm2-135m-instruct-q8_0.gguf"
+    val outputDir = file("src/androidTest/assets")
+    val outputFile = File(outputDir, "test_model.gguf")
+
+    outputs.file(outputFile)
+
+    doLast {
+        if (!outputDir.exists()) outputDir.mkdirs()
+        if (!outputFile.exists()) {
+            println("Downloading test model from $modelUrl...")
+            URL(modelUrl).openStream().use { input ->
+                outputFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            println("Download complete: ${outputFile.absolutePath}")
+        } else {
+            println("Test model already exists, skipping download: ${outputFile.path} - ${outputFile.length() / 1024 / 1024} MB")
+        }
+    }
+}
+
+// Ensure the model is downloaded before building the instrumented test
+tasks.matching {
+    it.name.contains("connectedDebugAndroidTest") ||
+    it.name.contains("packageDebugAndroidTest") ||
+    (it.name.startsWith("merge") && it.name.endsWith("AndroidTestAssets"))
+}.all {
+    dependsOn("downloadTestModel")
+}
+
 
 dependencies {
     implementation(project(":smollm"))
@@ -38,4 +85,7 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.logging)
+
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }

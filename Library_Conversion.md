@@ -28,35 +28,38 @@ Convert the project into a set of pure, headless library modules. The primary PO
 
 ### Milestone 1: Seamless Download & Persistence
 - [x] Press a button in the `:demo` app.
-- [x] Fake implementation of state transitions with coroutines.
+- [x] Real implementation of state transitions with coroutines & Ktor.
+- [x] Throttled progress updates to avoid OOM.
 - [x] State polling logic from Repository to UI.
 - [x] Koin dependency injection in Demo app.
-- [ ] **UNDONE**: Implement actual `DownloadManager` logic in `:smollm-core`.
 - [ ] **UNDONE**: Implement background notification during download.
 - [ ] **UNDONE**: Persist real download IDs in `SharedPreferences`.
 
 ### Milestone 2: Headless Inference
-- [ ] Once model is `ON_DISK`, load it into memory.
-- [ ] Automatically submit the prompt "hello".
-- [ ] Display the LLM's response in the `:demo` UI.
-- [ ] **UNDONE**: Connect `:smollm` JNI to the core for real verification.
+- [x] Real model loading into memory via `SmolLM`.
+- [x] Real inference and response generation.
+- [x] Display the LLM's response in the `:demo` UI.
 
-### Milestone 3: Clean up and Tidy Code
+### Milestone 3: Automated Test Resource Management
+- [ ] Create a Gradle task to download a model URL into `smolchat-core/src/androidTest/resources`.
+- [ ] Add the downloaded model to `.gitignore`.
+- [ ] Write a test that verifies the file is accessible on the phone as a resource.
+- [ ] Ensure the download task runs before `connectedDebugAndroidTest`.
+
+### Milestone 4: Clean up and Tidy Code
 - [ ] **Rename libraries**: Remove all references of "chat" from library modules and package names.
 - [ ] **Namespace Consolidation**: Standardize all libraries under `io.shubham0204.smollm`.
 - [ ] **Module Renaming**: Rename `:smolchat-core` to `:smollm-core`.
-- [ ] update readme and delete modules that are no longer needed.
 
-### Milestone 4: Local Maven Testing (RC)
+### Milestone 5: Local Maven Testing (RC)
 - [ ] Configure `maven-publish` plugin for all modules.
 - [ ] Publish to `mavenLocal()`.
 - [ ] Import and verify in a local build of `RaccoonForLemmy`.
-- [ ] develop simple feature in `RaccoonForLemmy` to use the new library and open PR in RaccoonForLemmy repo.
 
-### Milestone 5: Maven Central Publication
-- [ ] Setup Sonatype credentials and GPG signing.
+### Milestone 6: Maven Central Publication
+- [ ] Setup Sonatype/OSSRH credentials and GPG signing.
 - [ ] Configure POM metadata for all artifacts.
-- [ ] First release to Maven Central.
+- [ ] Final release to Maven Central.
 
 ---
 
