@@ -2,6 +2,7 @@ package io.shubham0204.smollm.demo
 
 import io.shubham0204.smolchat.core.ModelStatus
 import io.shubham0204.smolchat.core.SmolLMClient
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.sample
+import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds

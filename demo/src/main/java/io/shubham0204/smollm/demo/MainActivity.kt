@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val mainViewModel: MainViewModel = koinViewModel()
-            val uiState by mainViewModel.uiState.collectAsState()
+            val uiState by mainViewModel.collectAsState()
 
             MaterialTheme {
                 Surface(
@@ -64,18 +64,13 @@ fun MainContent(
             horizontalArrangement = Arrangement.Center
         ) {
             Button(onClick = onButtonClick) {
-                Text(text = "Download Model")
+                Text(text = uiState.buttonCopy)
             }
             Spacer(modifier = Modifier.width(16.dp))
-            val statusLabel = when (val status = uiState.modelStatus) {
-                is ModelStatus.UNAVAILABLE -> "Unavailable"
-                is ModelStatus.DOWNLOADING -> "Downloading (${(status.progress * 100).toInt()}%)"
-                is ModelStatus.ON_DISK -> "On Disk"
-                is ModelStatus.LOADED_IN_MEMORY -> "Loaded"
-            }
-            Text(text = statusLabel)
+
+            Text(text = uiState.statusText)
         }
-        
+
         if (uiState.aiResponse.isNotEmpty()) {
             Spacer(modifier = Modifier.height(24.dp))
             Text(
@@ -99,7 +94,8 @@ fun MainContentPreview() {
             uiState = MainViewModel.UiState(
                 statusText = "Preview",
                 modelStatus = ModelStatus.DOWNLOADING(0.45f),
-                aiResponse = "Hello! I am a preview response."
+                aiResponse = "Hello! I am a preview response.",
+                buttonCopy = "Download model",
             ),
             onButtonClick = {}
         )

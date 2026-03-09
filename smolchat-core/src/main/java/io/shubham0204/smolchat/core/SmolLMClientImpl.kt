@@ -47,11 +47,13 @@ class SmolLMClientImpl(
         smolLM.load(file.absolutePath)
     }
 
-    override suspend fun generateResponse(prompt: String): String = withContext(Dispatchers.Unconfined) {
-        try {
-            smolLM.getResponse(prompt)
-        } catch (e: Exception) {
-            "Error: ${e.message}"
+    override suspend fun generateResponse(prompt: String): String {
+        return withContext(Dispatchers.Default) {
+            try {
+                smolLM.getResponse(prompt)
+            } catch (e: Exception) {
+                "Error: ${e.message}"
+            }
         }
     }
 
