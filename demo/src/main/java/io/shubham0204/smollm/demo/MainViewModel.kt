@@ -12,6 +12,13 @@ class MainViewModel(
     private val repository: ModelsRepository
 ) : ViewModel() {
 
+    companion object {
+        private val POC_MODEL_URL =
+            "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/resolve/main/smollm2-360m-instruct-q8_0.gguf"
+        private val POC_MODEL_NAME = "smollm2-360m-instruct-q8_0.gguf"
+
+    }
+
     data class UiState(
         val statusText: String = "initial",
         val modelStatus: ModelStatus = ModelStatus.UNAVAILABLE,
@@ -21,24 +28,31 @@ class MainViewModel(
     val uiState = MutableStateFlow(UiState())
 
     init {
-        viewModelScope.launch {
-            repository.getModelStateFlow("some-model-id").collect { newStatus ->
-                uiState.update { it.copy(modelStatus = newStatus) }
+        observeStateFlow()
+    }
 
-                // If loaded, trigger the prompt "hello"
-                if (newStatus is ModelStatus.LOADED_IN_MEMORY && uiState.value.aiResponse.isEmpty()) {
-                    val response = repository.generateResponse("hello")
-                    uiState.update { it.copy(aiResponse = response) }
-                }
+    private fun observeStateFlow() {
+        viewModelScope.launch {
+            repository.getModelStateFlow().collect { newStatus ->
+                uiState.update { it.copy(modelStatus = newStatus) }
             }
         }
     }
 
     fun onButtonClicked() {
+        uiState.update { it.copy(statusText = "clicked") }
 
         viewModelScope.launch {
-            repository.triggerLoad("some-model-id")
+            when (uiState.value.modelStatus) {
+                is ModelStatus.DOWNLOADING -> Unit // do nothing
+                ModelStatus.ON_DISK -> Unit // do nothing
+                ModelStatus.UNAVAILABLE -> repository.loadModel(POC_MODEL_NAME, POC_MODEL_URL)
+                is ModelStatus.LOADED_IN_MEMORY -> {
+                    uiState.update { it.copy(statusText = "Thinking...") }
+                    val response = repository.generateResponse("hello")
+                    uiState.update { it.copy(aiResponse = response) }
+                }
+            }
         }
-        uiState.update { it.copy(statusText = "clicked") }
     }
 }

@@ -19,8 +19,9 @@ val appModule = module {
             }
         }
     }
-    single { ModelDownloader(get(), get()) }
-    single<SmolLMClient> { SmolLMClientImpl(get()) }
+    factory { ModelDownloader(get(), get()) }
+    factory<SmolLMClient> { SmolLMClientImpl(get()) }
+
     single { ModelsRepository(get()) }
     viewModel { MainViewModel(get()) }
 }

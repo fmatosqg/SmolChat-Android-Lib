@@ -1,7 +1,5 @@
 package io.shubham0204.smolchat.core
 
-//import io.ktor.client.engine.cio.*
-
 import android.content.Context
 import android.util.Log
 import io.ktor.client.HttpClient
@@ -18,18 +16,20 @@ import kotlinx.coroutines.launch
 import kotlinx.io.asSink
 import java.io.File
 import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 
 class ModelDownloader(private val context: Context, private val httpClient: HttpClient) {
 
-    private val scope = CoroutineScope(Dispatchers.Default)
-    private val lock = ReentrantLock()
+//    private val scope = CoroutineScope(Dispatchers.Default)
+
+    companion object {
+        private const val BUFFER_SIZE: Long = 1024 * 1024
+    }
 
     suspend fun ensureModelDownloaded(
         url: String,
         modelName: String,
         onProgress: (progress: Float) -> Unit
-    ): File {
+    ): File? {
         val modelDir = File(context.cacheDir, "model")
         if (!modelDir.exists()) modelDir.mkdirs()
         val outputFile = File(modelDir, modelName)
@@ -48,12 +48,19 @@ class ModelDownloader(private val context: Context, private val httpClient: Http
             "Model $modelName not found or empty. Starting download from $url."
         )
 
-        lock.withLock {
-            scope.launch {
-                download(url, modelName, onProgress)
+        return try {
+            onProgress(0f)
+            download(url, modelName, onProgress)
+            Log.i("ModelDownloader", "Download finished for $modelName. Waiting for completion...")
+
+            outputFile
+        } catch (e: Exception) {
+            Log.e("ModelDownloader", "Error downloading model $modelName: ${e.message}")
+            if (outputFile.exists()) {
+                outputFile.delete()
             }
+            null
         }
-        return outputFile
     }
 
     suspend fun download(url: String, modelName: String, onProgress: (progress: Float) -> Unit) {
@@ -64,20 +71,16 @@ class ModelDownloader(private val context: Context, private val httpClient: Http
         val outputFile = File(modelDir, modelName)
         Log.i("ModelDownloader", "Downloading $url to ${outputFile.absolutePath}")
 
-
-        val stream = outputFile.outputStream().asSink()
-        val bufferSize: Long = 1024 * 1024
-
-        httpClient.prepareGet(url).execute { httpResponse ->
+        httpClient.prepareGet(urlString = url).execute { httpResponse ->
 
             val channel: ByteReadChannel = httpResponse.body()
             var count = 0L
-            stream.use {
+            outputFile.outputStream().asSink().use { stream ->
                 while (!channel.exhausted()) {
-                    val chunk = channel.readRemaining(bufferSize)
+                    val chunk = channel.readRemaining(BUFFER_SIZE)
                     count += chunk.remaining
 
-                    chunk.transferTo(stream)
+                    chunk.transferTo(sink = stream)
 
                     val progress = count.toFloat() / (httpResponse.contentLength()?.toFloat() ?: 0f)
 
@@ -85,7 +88,6 @@ class ModelDownloader(private val context: Context, private val httpClient: Http
                 }
             }
         }
-
-
     }
+
 }

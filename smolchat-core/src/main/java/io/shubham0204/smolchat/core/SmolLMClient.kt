@@ -4,10 +4,12 @@ import kotlinx.coroutines.flow.Flow
 import java.io.File
 
 interface SmolLMClient {
-    suspend fun loadModel(modelId: String)
 
-    suspend fun generateResponse(prompt: String): String
+    suspend fun loadModel(modelName: String, modelUrl: String)
+
+    fun unloadModel()
 
     fun getModelStateFlow(): Flow<ModelStatus>
 
+    suspend fun generateResponse(prompt: String): String
 }

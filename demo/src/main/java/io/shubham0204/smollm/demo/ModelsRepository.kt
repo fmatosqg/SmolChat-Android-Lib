@@ -8,14 +8,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.sample
 import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 class ModelsRepository(private val client: SmolLMClient) {
 
-    suspend fun triggerLoad(modelId: String) {
-        client.loadModel(modelId)
+    suspend fun loadModel(modelName: String, modelUrl: String) {
+        client.loadModel(modelName = modelName, modelUrl = modelUrl)
     }
 
     suspend fun generateResponse(prompt: String): String {
@@ -23,8 +24,8 @@ class ModelsRepository(private val client: SmolLMClient) {
     }
 
     @OptIn(FlowPreview::class)
-    fun getModelStateFlow(modelId: String): Flow<ModelStatus> = client
+    fun getModelStateFlow(): Flow<ModelStatus> = client
         .getModelStateFlow()
-        .debounce(timeout = 200.milliseconds)
+        .sample(200.milliseconds)
         .distinctUntilChanged()
 }

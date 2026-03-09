@@ -4,5 +4,5 @@ sealed class ModelStatus {
     object UNAVAILABLE : ModelStatus()
     data class DOWNLOADING(val progress: Float) : ModelStatus()
     object ON_DISK : ModelStatus()
-    object LOADED_IN_MEMORY : ModelStatus()
+    data class LOADED_IN_MEMORY(val modelName: String) : ModelStatus()
 }

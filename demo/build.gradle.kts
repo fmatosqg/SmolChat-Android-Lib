@@ -38,6 +38,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":smolchat-core"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -46,14 +48,14 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(project(":smolchat-core"))
-    implementation("io.ktor:ktor-client-okhttp:3.0.2")
-    implementation("io.ktor:ktor-client-cio:3.0.2")
+
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
 
-    // Dependencies to our library modules will go here later
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.cio)
 }

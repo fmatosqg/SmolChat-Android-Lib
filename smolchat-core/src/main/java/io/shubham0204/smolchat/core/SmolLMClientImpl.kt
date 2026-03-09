@@ -12,49 +12,42 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 class SmolLMClientImpl(
-//    private val context: android.content.Context,
     private val modelDownloader: ModelDownloader
 ) : SmolLMClient {
     private val state = MutableStateFlow<ModelStatus>(ModelStatus.UNAVAILABLE)
 
     private val smolLM = SmolLM()
-//    private var downloadedFile: File? = null
 
-    private val POC_MODEL_URL =
-        "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/resolve/main/smollm2-360m-instruct-q8_0.gguf"
-    private val POC_MODEL_NAME = "smollm2-360m-instruct-q8_0.gguf"
 
     override fun getModelStateFlow(): Flow<ModelStatus> = state
 
-    override suspend fun loadModel(modelId: String) {
+    override suspend fun loadModel(modelName: String, modelUrl: String) {
         if (state.value != ModelStatus.UNAVAILABLE) return
 
-        val modelFile = modelDownloader.ensureModelDownloaded(
-            url = POC_MODEL_URL,
-            modelName = POC_MODEL_NAME,
-            onProgress = { progress ->
-                state.value = ModelStatus.DOWNLOADING(progress)
-            }
-        )
-        state.value = ModelStatus.ON_DISK
+        withContext(Dispatchers.IO) {
+            modelDownloader.ensureModelDownloaded(
+                modelName = modelName,
+                url = modelUrl,
+                onProgress = { progress ->
+                    state.value = ModelStatus.DOWNLOADING(progress)
+                }
+            )
+                ?.let {
+                    state.value = ModelStatus.ON_DISK
+                    loadModelFromFile(it)
+                    state.value = ModelStatus.LOADED_IN_MEMORY(modelName)
+                }
+            // TODO handle failure status
+        }
 
-        loadModelFromFile(modelFile)
 
     }
 
     private suspend fun loadModelFromFile(file: File) {
-        withContext(Dispatchers.IO) {
-
-            try {
-                smolLM.load(file.absolutePath)
-                state.value = ModelStatus.LOADED_IN_MEMORY
-            } catch (e: Exception) {
-                state.value = ModelStatus.UNAVAILABLE // Or a specific ERROR state
-            }
-        }
+        smolLM.load(file.absolutePath)
     }
 
-    override suspend fun generateResponse(prompt: String): String = withContext(Dispatchers.IO) {
+    override suspend fun generateResponse(prompt: String): String = withContext(Dispatchers.Unconfined) {
         try {
             smolLM.getResponse(prompt)
         } catch (e: Exception) {
@@ -62,7 +55,7 @@ class SmolLMClientImpl(
         }
     }
 
-    fun close() {
+    override fun unloadModel() {
         smolLM.close()
     }
 }
