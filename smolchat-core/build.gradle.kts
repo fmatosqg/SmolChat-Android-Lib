@@ -45,7 +45,7 @@ android {
     androidResources {
         // https://developer.android.com/reference/tools/gradle-api/8.13/com/android/build/api/dsl/AndroidResources
 //        noCompress("")
-//        noCompress += listOf("gguf") // this works for assets/ but not for res/raw
+        noCompress += listOf("gguf") // this works for assets/ but not for res/raw
 //        noCompress += listOf("gguf", "GGUF", ".gguf", "raw/test_model.gguf")
     }
 

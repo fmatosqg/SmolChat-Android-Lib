@@ -54,6 +54,40 @@ Java_io_shubham0204_smollm_GGUFReader_getGGUFContextNativeHandleFromFd(JNIEnv* e
     return handle;
 }
 
+#include "ggml-impl.h"
+
+extern "C" JNIEXPORT jlong JNICALL
+Java_io_shubham0204_smollm_GGUFReader_getGGUFContextNativeHandleFromBuffer(JNIEnv* env, jobject thiz, jobject buffer) {
+    void*  data = env->GetDirectBufferAddress(buffer);
+    jlong  size = env->GetDirectBufferCapacity(buffer);
+    
+    if (data == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, "GGuf-JNI", "GetDirectBufferAddress returned NULL");
+        return 0;
+    }
+
+    __android_log_print(ANDROID_LOG_INFO, "GGuf-JNI", "Loading GGUF from buffer: address=%p, size=%lld", data, (long long)size);
+
+    FILE* file = fmemopen(data, (size_t)size, "rb");
+    if (file == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, "GGuf-JNI", "fmemopen failed: %s", strerror(errno));
+        return 0;
+    }
+
+    gguf_init_params initParams  = { .no_alloc = true, .ctx = nullptr };
+    gguf_context*    ggufContext = gguf_init_from_file_impl(file, initParams);
+    
+    fclose(file);
+
+    if (ggufContext == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, "GGuf-JNI", "gguf_init_from_file_impl returned NULL");
+    } else {
+        __android_log_print(ANDROID_LOG_INFO, "GGuf-JNI", "gguf_init_from_file_impl success");
+    }
+    
+    return reinterpret_cast<jlong>(ggufContext);
+}
+
 extern "C" JNIEXPORT jlong JNICALL
 Java_io_shubham0204_smollm_GGUFReader_getContextSize(JNIEnv* env, jobject thiz, jlong nativeHandle) {
     gguf_context* ggufContext       = reinterpret_cast<gguf_context*>(nativeHandle);

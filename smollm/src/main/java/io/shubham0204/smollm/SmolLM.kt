@@ -197,17 +197,13 @@ class SmolLM {
                 )
         }
 
-      fun loadFromFd(fd: Int, params: InferenceParams = InferenceParams()) {
-//        withContext(Dispatchers.IO) {
+    suspend fun loadFromFd(fd: Int, params: InferenceParams = InferenceParams()) =
+        withContext(Dispatchers.IO) {
             val ggufReader = GGUFReader()
-//            val virtualPath = "/proc/self/fd/$fd"
-
             ggufReader.loadFromFd(fd)
             val modelContextSize = ggufReader.getContextSize() ?: DefaultInferenceParams.contextSize
             val modelChatTemplate =
                 ggufReader.getChatTemplate() ?: DefaultInferenceParams.chatTemplate
-
-
 
             nativePtr =
                 loadModelFromFd(
@@ -222,6 +218,31 @@ class SmolLM {
                     params.useMlock,
                 )
             assert(nativePtr != 0L) { "Failed to load model from file descriptor $fd" }
+        }
+
+    suspend fun loadFromBuffer(assetManager: android.content.res.AssetManager, params: InferenceParams = InferenceParams()) =
+        withContext(Dispatchers.IO) {
+            // For POC, we'll assume the GGUFReader doesn't need to load from buffer yet 
+            // or we'll fix it if it does.
+            // val ggufReader = GGUFReader()
+            // ggufReader.loadFromBuffer(buffer)
+            
+            val modelContextSize = DefaultInferenceParams.contextSize
+            val modelChatTemplate = DefaultInferenceParams.chatTemplate
+
+            nativePtr =
+                loadModelFromBuffer(
+                    assetManager,
+                    params.minP,
+                    params.temperature,
+                    params.storeChats,
+                    params.contextSize ?: modelContextSize,
+                    params.chatTemplate ?: modelChatTemplate,
+                    params.numThreads,
+                    params.useMmap,
+                    params.useMlock,
+                )
+            assert(nativePtr != 0L) { "Failed to load model from buffer" }
         }
 
     /**
@@ -356,6 +377,18 @@ class SmolLM {
 
     private external fun loadModelFromFd(
         fd: Int,
+        minP: Float,
+        temperature: Float,
+        storeChats: Boolean,
+        contextSize: Long,
+        chatTemplate: String,
+        nThreads: Int,
+        useMmap: Boolean,
+        useMlock: Boolean,
+    ): Long
+
+    private external fun loadModelFromBuffer(
+        assetManager: android.content.res.AssetManager,
         minP: Float,
         temperature: Float,
         storeChats: Boolean,

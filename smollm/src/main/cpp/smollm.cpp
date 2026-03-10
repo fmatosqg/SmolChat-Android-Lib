@@ -55,6 +55,55 @@ Java_io_shubham0204_smollm_SmolLM_loadModelFromFd(JNIEnv* env, jobject thiz, jin
                                                        contextSize, chatTemplate, nThreads, useMmap, useMlock);
 }
 
+#include "LLMInference.h"
+#include <jni.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <android/log.h>
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
+
+extern "C" JNIEXPORT jlong JNICALL
+Java_io_shubham0204_smollm_SmolLM_loadModelFromBuffer(JNIEnv* env, jobject thiz, jobject assetManager, jfloat minP,
+                                                      jfloat temperature, jboolean storeChats, jlong contextSize,
+                                                      jstring chatTemplate, jint nThreads, jboolean useMmap, jboolean useMlock) {
+    /* POC: Use AAssetManager to prove we can load the asset without /proc/self/fd */
+    
+    AAssetManager* mgr = AAssetManager_fromJava(env, assetManager);
+    if (mgr == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, "SmolLM-JNI", "loadModelFromBuffer: AAssetManager_fromJava failed");
+        return 0;
+    }
+
+    const char* assetName = "test_model.gguf"; 
+    AAsset* asset = AAssetManager_open(mgr, assetName, AASSET_MODE_BUFFER);
+    if (asset == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, "SmolLM-JNI", "loadModelFromBuffer: Failed to open asset %s", assetName);
+        return 0;
+    }
+
+    const void* data = AAsset_getBuffer(asset);
+    off_t size = AAsset_getLength(asset);
+
+    __android_log_print(ANDROID_LOG_INFO, "SmolLM-JNI", "loadModelFromBuffer POC: address=%p, size=%lld", data, (long long)size);
+
+    auto*       llmInference     = new LLMInference();
+    const char* chatTemplateCstr = env->GetStringUTFChars(chatTemplate, nullptr);
+    try {
+        llmInference->loadModelFromBuffer((void*)data, (size_t)size, minP, temperature, storeChats, contextSize,
+                                          chatTemplateCstr, nThreads, useMlock);
+    } catch (const std::exception& e) {
+        __android_log_print(ANDROID_LOG_ERROR, "SmolLM-JNI", "loadModelFromBuffer exception: %s", e.what());
+        delete llmInference;
+        AAsset_close(asset);
+        env->ReleaseStringUTFChars(chatTemplate, chatTemplateCstr);
+        return 0;
+    }
+    env->ReleaseStringUTFChars(chatTemplate, chatTemplateCstr);
+    __android_log_print(ANDROID_LOG_INFO, "SmolLM-JNI", "loadModelFromBuffer success");
+    return reinterpret_cast<jlong>(llmInference);
+}
+
 extern "C" JNIEXPORT void JNICALL
 Java_io_shubham0204_smollm_SmolLM_addChatMessage(JNIEnv* env, jobject thiz, jlong modelPtr, jstring message,
                                                  jstring role) {

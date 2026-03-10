@@ -9,12 +9,32 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
 
+import io.shubham0204.smollm.GGUFReader
+import java.nio.channels.FileChannel
+import java.io.FileInputStream
+
 @RunWith(AndroidJUnit4::class)
 class SmolLMClientTest {
+
+    @Test
+    fun loadModelFromBuffer() = runTest {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        
+        // POC: Passing AssetManager instead of ByteBuffer
+        val client = SmolLMClientImpl(mockk())
+        client.loadModelFromBuffer(context.assets)
+        
+        val response = client.generateResponse("Hello")
+        Log.i("SmolLMClientTest", "AI Response from AssetManager: $response")
+        assertNotNull("Response should not be null", response)
+        assertTrue("Response should not be empty", response.isNotEmpty())
+        assertFalse("Should not be error: $response", response.startsWith("Error:"))
+    }
 
     @Test
     fun testAssetExists() {
@@ -41,13 +61,9 @@ class SmolLMClientTest {
 
         val fd = context.resources.openRawResourceFd(R.raw.test_model)
 
-        fd.fileDescriptor
-        fd.parcelFileDescriptor.fd
-
-
         assertTrue("File descriptor should be valid", fd.parcelFileDescriptor.fd > 0)
-
     }
+
     @Test
     fun loadModelFromAssetFd() = runTest {
         val context = InstrumentationRegistry.getInstrumentation().context
@@ -56,26 +72,18 @@ class SmolLMClientTest {
         context.assets.openFd("test_model.gguf").use { afd ->
             Log.i("SmolLMClientTest", "Opened asset file descriptor: fd=${afd.parcelFileDescriptor.fd}, startOffset=${afd.startOffset}, length=${afd.length}")
             client.loadModelFromFd(afd.parcelFileDescriptor.fd)
-
-//            client.generateResponse("Hello world")
         }
     }
+
     @Test
     fun loadModelFromResFd() = runTest {
         val context = InstrumentationRegistry.getInstrumentation().context
         val client = SmolLMClientImpl(mockk())
 
         context.resources.openRawResourceFd(R.raw.test_model).use { afd ->
-
             Log.i("SmolLMClientTest", "Opened asset file descriptor: fd=${afd.parcelFileDescriptor.fd}, startOffset=${afd.startOffset}, length=${afd.length}")
             client.loadModelFromFd(afd.parcelFileDescriptor.fd)
-
         }
-//        val fd = context.resources.openRawResourceFd(R.raw.test_model)
-
-//        client.loadModelFromFd(fd.parcelFileDescriptor.fd)
-
-        // Wait for the model to load (you might want to use a more robust synchronization mechanism)
 
         val response = client.generateResponse("Hello, how are you?")
         assertNotNull(response)

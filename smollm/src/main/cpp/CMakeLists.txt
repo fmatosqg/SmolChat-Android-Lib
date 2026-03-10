@@ -139,6 +139,7 @@ target_include_directories(
         ${TARGET_NAME_GGUF_READER}
         PUBLIC
         ${GGML_DIR}/include
+        ${GGML_DIR}/src
 )
 target_compile_options(
         ${TARGET_NAME_GGUF_READER}

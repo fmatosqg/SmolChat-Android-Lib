@@ -7,6 +7,8 @@ interface SmolLMClient {
 
     suspend fun loadModel(modelName: String, modelUrl: String)
 
+    suspend fun loadModelFromBuffer(assetManager: android.content.res.AssetManager)
+
     fun unloadModel()
 
     fun getModelStateFlow(): Flow<ModelStatus>

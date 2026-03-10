@@ -37,12 +37,33 @@ class GGUFReader {
         }
     }
 
-      fun loadFromFd(fd: Int) {
-//        withContext(Dispatchers.IO) {
-            nativeHandle = getGGUFContextNativeHandleFromFd(fd)
+      suspend fun loadFromFd(fd: Int) =
+          withContext(Dispatchers.IO) {
+              nativeHandle = getGGUFContextNativeHandleFromFd(fd)
 
-            assert(nativeHandle != 0L) { "Failed to load GGUF file from fd: $fd" }
-        }
+              assert(nativeHandle != 0L) { "Failed to load GGUF file from fd: $fd" }
+          }
+
+      suspend fun loadFromBuffer(buffer: java.nio.ByteBuffer) =
+          withContext(Dispatchers.IO) {
+              // Check magic bytes: GGUF (0x47 0x47 0x55 0x46)
+              val magic = ByteArray(4)
+              buffer.mark()
+              buffer.get(magic)
+              buffer.reset()
+              val magicString = String(magic)
+              assert(magicString == "GGUF") { 
+                  if (magicString.startsWith("PK")) {
+                      "Failed to load GGUF from buffer: The file is compressed (ZIP/APK). Ensure 'noCompress' is set in gradle for .gguf files."
+                  } else {
+                      "Failed to load GGUF from buffer: Invalid magic bytes '$magicString', expected 'GGUF'."
+                  }
+              }
+
+              nativeHandle = getGGUFContextNativeHandleFromBuffer(buffer)
+              assert(nativeHandle != 0L) { "Failed to load GGUF from buffer" }
+          }
+
 
     fun getContextSize(): Long? {
         assert(nativeHandle != 0L) { "Use GGUFReader.load() to initialize the reader" }
@@ -64,6 +85,8 @@ class GGUFReader {
     private external fun getGGUFContextNativeHandle(modelPath: String): Long
 
     private external fun getGGUFContextNativeHandleFromFd(fd:Int): Long
+
+    private external fun getGGUFContextNativeHandleFromBuffer(buffer: java.nio.ByteBuffer): Long
 
     /** Read the context size (in no. of tokens) from the GGUF file, given the native handle */
     private external fun getContextSize(nativeHandle: Long): Long

@@ -58,6 +58,11 @@ class SmolLMClientImpl(
         }
     }
 
+    override suspend fun loadModelFromBuffer(assetManager: android.content.res.AssetManager) {
+        smolLM.loadFromBuffer(assetManager)
+        state.value = ModelStatus.LOADED_IN_MEMORY("buffer_model")
+    }
+
     override fun unloadModel() {
         smolLM.close()
     }
