@@ -53,6 +53,18 @@ class SmolLMClientImpl(
         }
     }
 
+    override fun addSystemPrompt(systemPrompt: String) {
+        smolLM.addSystemPrompt(systemPrompt)
+    }
+
+    override fun addUserPrompt(userMessage: String) {
+        smolLM.addUserMessage(userMessage)
+    }
+
+    override fun addAssistantResponse(assistantMessage: String) {
+        smolLM.addAssistantMessage(assistantMessage)
+    }
+
     override fun unloadModel() {
         smolLM.close()
     }

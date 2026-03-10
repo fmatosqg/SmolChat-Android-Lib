@@ -11,4 +11,7 @@ interface SmolLMClient {
     fun getModelStateFlow(): Flow<ModelStatus>
 
     suspend fun generateResponse(prompt: String): String
+    fun addSystemPrompt(systemPrompt: String)
+    fun addUserPrompt(userMessage: String)
+    fun addAssistantResponse(assistantMessage: String)
 }

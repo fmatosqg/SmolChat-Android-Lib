@@ -83,6 +83,7 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.core)
+    implementation("com.google.code.gson:gson:2.11.0")
 
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
