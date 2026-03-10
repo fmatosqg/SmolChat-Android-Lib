@@ -2,5 +2,5 @@ build/
 
 # See task downloadTestModel
 src/androidTest/assets/test_model.gguf
-src/androidTest/res/raw/test_model.gguf
-src/androidTest/resources/test_model.gguf
+#src/androidTest/res/raw/test_model.gguf
+#src/androidTest/resources/test_model.gguf

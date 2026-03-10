@@ -43,11 +43,6 @@ class SmolLMClientImpl(
         smolLM.load(file.absolutePath)
     }
 
-    @TestOnly
-    internal suspend fun loadModelFromFd(fd: Int) {
-        smolLM.loadFromFd(fd)
-    }
-
     override suspend fun generateResponse(prompt: String): String {
         return withContext(Dispatchers.Default) {
             try {
@@ -56,11 +51,6 @@ class SmolLMClientImpl(
                 "Error: ${e.message}"
             }
         }
-    }
-
-    override suspend fun loadModelFromBuffer(assetManager: android.content.res.AssetManager) {
-        smolLM.loadFromBuffer(assetManager)
-        state.value = ModelStatus.LOADED_IN_MEMORY("buffer_model")
     }
 
     override fun unloadModel() {

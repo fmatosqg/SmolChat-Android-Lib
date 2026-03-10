@@ -3,41 +3,50 @@ package io.shubham0204.smolchat.core
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import io.shubham0204.smolchat.core.test.R
-import io.mockk.mockk
+import io.ktor.client.HttpClient
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
+import kotlinx.coroutines.withContext
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
-import org.junit.Assert.assertFalse
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
-import io.shubham0204.smollm.GGUFReader
-import java.nio.channels.FileChannel
-import java.io.FileInputStream
+import java.io.File
+import java.io.FileOutputStream
 
 @RunWith(AndroidJUnit4::class)
 class SmolLMClientTest {
 
-    @Test
-    fun loadModelFromBuffer() = runTest {
-        val context = InstrumentationRegistry.getInstrumentation().context
-        
-        // POC: Passing AssetManager instead of ByteBuffer
-        val client = SmolLMClientImpl(mockk())
-        client.loadModelFromBuffer(context.assets)
-        
-        val response = client.generateResponse("Hello")
-        Log.i("SmolLMClientTest", "AI Response from AssetManager: $response")
-        assertNotNull("Response should not be null", response)
-        assertTrue("Response should not be empty", response.isNotEmpty())
-        assertFalse("Should not be error: $response", response.startsWith("Error:"))
+    /**
+     * Copies an asset file from the APK to the app's internal model cache directory.
+     * This directory matches the one used by [ModelDownloader].
+     *
+     * @param sourceName The relative path to the asset within the 'assets' directory.
+     * @param destinationName The filename to use in the internal storage.
+     * @return The [File] object pointing to the copied model.
+     */
+    private suspend fun copyAssetToModelDir(sourceName: String, destinationName: String): File {
+        return withContext(Dispatchers.IO) {
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val modelDir = File(context.cacheDir, "model")
+            if (!modelDir.exists()) modelDir.mkdirs()
+
+            val outputFile = File(modelDir, destinationName)
+            val assetContext = InstrumentationRegistry.getInstrumentation().context
+
+            assetContext.assets.open(sourceName).use { input ->
+                outputFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            outputFile
+        }
     }
 
     @Test
     fun testAssetExists() {
+        Log.i("SmolLMClientTest", "Checking if test model asset exists...")
         val context = InstrumentationRegistry.getInstrumentation().context
         val assetManager = context.assets
         val inputStream = assetManager.open("test_model.gguf")
@@ -46,47 +55,22 @@ class SmolLMClientTest {
     }
 
     @Test
-    fun another() {
-        val context = InstrumentationRegistry.getInstrumentation().context
+    fun testLoadModelFromAsset() = runTest {
+        val modelFile = copyAssetToModelDir("test_model.gguf", "test_model_copied.gguf")
+        assertTrue("Model file was not copied successfully",modelFile.exists())
+        Log.i("SmolLMClientTest", "Model file copied to: ${modelFile.absolutePath} - ${modelFile.length() / 1024 / 1024} MB")
 
-        val afd = context.assets.openFd("test_model.gguf")
-        val fd = afd.parcelFileDescriptor.fd // This is the integer you pass to JNI
+        val smolLMClient = SmolLMClientImpl(
+            ModelDownloader(
+                InstrumentationRegistry.getInstrumentation().targetContext,
+                HttpClient()
+            )
+        )
+        smolLMClient.loadModelFromFile(modelFile)
 
-        assertTrue("File descriptor should be valid", fd > 0)
-    }
+        val response = smolLMClient.generateResponse("Hello")
 
-    @Test
-    fun yetanother() {
-        val context = InstrumentationRegistry.getInstrumentation().context
-
-        val fd = context.resources.openRawResourceFd(R.raw.test_model)
-
-        assertTrue("File descriptor should be valid", fd.parcelFileDescriptor.fd > 0)
-    }
-
-    @Test
-    fun loadModelFromAssetFd() = runTest {
-        val context = InstrumentationRegistry.getInstrumentation().context
-        val client = SmolLMClientImpl(mockk())
-
-        context.assets.openFd("test_model.gguf").use { afd ->
-            Log.i("SmolLMClientTest", "Opened asset file descriptor: fd=${afd.parcelFileDescriptor.fd}, startOffset=${afd.startOffset}, length=${afd.length}")
-            client.loadModelFromFd(afd.parcelFileDescriptor.fd)
-        }
-    }
-
-    @Test
-    fun loadModelFromResFd() = runTest {
-        val context = InstrumentationRegistry.getInstrumentation().context
-        val client = SmolLMClientImpl(mockk())
-
-        context.resources.openRawResourceFd(R.raw.test_model).use { afd ->
-            Log.i("SmolLMClientTest", "Opened asset file descriptor: fd=${afd.parcelFileDescriptor.fd}, startOffset=${afd.startOffset}, length=${afd.length}")
-            client.loadModelFromFd(afd.parcelFileDescriptor.fd)
-        }
-
-        val response = client.generateResponse("Hello, how are you?")
-        assertNotNull(response)
-        assertTrue(response.isNotEmpty())
+        Log.i("SmolLMClientTest", "Generated response: $response")
+        assertTrue("Response should not be empty", response.isNotEmpty())
     }
 }

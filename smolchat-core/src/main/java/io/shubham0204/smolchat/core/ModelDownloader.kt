@@ -19,7 +19,7 @@ import java.util.concurrent.locks.ReentrantLock
 
 class ModelDownloader(private val context: Context, private val httpClient: HttpClient) {
 
-//    private val scope = CoroutineScope(Dispatchers.Default)
+    val modelDir = File(context.cacheDir, "model")
 
     companion object {
         private const val BUFFER_SIZE: Long = 1024 * 1024
@@ -30,7 +30,7 @@ class ModelDownloader(private val context: Context, private val httpClient: Http
         modelName: String,
         onProgress: (progress: Float) -> Unit
     ): File? {
-        val modelDir = File(context.cacheDir, "model")
+
         if (!modelDir.exists()) modelDir.mkdirs()
         val outputFile = File(modelDir, modelName)
 

@@ -44,9 +44,6 @@ class LLMInference {
     void loadModel(const char* modelPath, float minP, float temperature, bool storeChats, long contextSize,
                    const char* chatTemplate, int nThreads, bool useMmap, bool useMlock);
 
-    void loadModelFromBuffer(void* buffer, size_t size, float minP, float temperature, bool storeChats,
-                             long contextSize, const char* chatTemplate, int nThreads, bool useMlock);
-
     std::string benchModel(int pp, int tg, int pl, int nr);
 
     void addChatMessage(const char* message, const char* role);

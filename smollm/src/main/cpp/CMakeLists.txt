@@ -139,7 +139,6 @@ target_include_directories(
         ${TARGET_NAME_GGUF_READER}
         PUBLIC
         ${GGML_DIR}/include
-        ${GGML_DIR}/src
 )
 target_compile_options(
         ${TARGET_NAME_GGUF_READER}
@@ -147,13 +146,8 @@ target_compile_options(
         -fvisibility=hidden -fvisibility-inlines-hidden -ffunction-sections -fdata-sections
 )
 target_link_libraries(
-        ggml-base
-        PUBLIC log
-)
-
-target_link_libraries(
         ${TARGET_NAME_GGUF_READER}
-        ggml-base log
+        ggml
 )
 target_link_options(
         ${TARGET_NAME_GGUF_READER}

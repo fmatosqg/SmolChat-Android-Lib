@@ -1,6 +1,4 @@
-import java.net.URL
 import java.net.URI
-import java.io.File
 
 plugins {
     alias(libs.plugins.android.library)
@@ -41,26 +39,12 @@ android {
             excludes += "META-INF/LICENSE-notice.md"
         }
     }
-
-    androidResources {
-        // https://developer.android.com/reference/tools/gradle-api/8.13/com/android/build/api/dsl/AndroidResources
-//        noCompress("")
-        noCompress += listOf("gguf") // this works for assets/ but not for res/raw
-//        noCompress += listOf("gguf", "GGUF", ".gguf", "raw/test_model.gguf")
-    }
-
-    aaptOptions {
-        // https://docs.unity3d.com/2023.2/Documentation/ScriptReference/Unity.Android.Gradle.AaptOptions.NoCompress.html
-
-//        noCompress("gguf", "GGUF", "test_model.gguf")
-    }
 }
 
 tasks.register("downloadTestModel") {
     val modelUrl =
         "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/resolve/main/smollm2-360m-instruct-q8_0.gguf"
-//    val modelUrl = "https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct-GGUF/resolve/main/smollm2-135m-instruct-q8_0.gguf"
-    val outputDir = file("src/androidTest/res/raw/")
+    val outputDir = file("src/androidTest/assets/")
     val outputFile = File(outputDir, "test_model.gguf")
 
     outputs.file(outputFile)
